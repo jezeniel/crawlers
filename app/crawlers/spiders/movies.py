@@ -11,7 +11,7 @@ class ClickTheCitySpider:
     def __init__(self, url: str):
         self.url = url
 
-    def run(self) -> list:
+    def crawl(self) -> list:
         response = requests.get(self.url)
         page = BeautifulSoup(response.content, 'lxml')
         return self.scrape(page)
@@ -20,25 +20,33 @@ class ClickTheCitySpider:
         """ I tried using the meta tags initially, but some cinemas have
         multiple movies on a single room. """
         result = []
-        cinemas = page.select('ul#cinemas li.cinema')
-        for c in cinemas:
-            cinema_name = c.find('h2').text
+        rooms = page.select('ul#cinemas li.cinema')
+        for r in rooms:
+            room_name = r.find('h2').find('em').text
             movie_infos = []
 
-            for movie in c.select('ul li'):
-                movie_infos.append(self.get_movie_info(movie))
+            for movie in r.select('ul li'):
+                movie_infos.append(self.parse_movie(movie))
 
             result.append({
-                'cinema': cinema_name,
+                'room': room_name,
                 'movies': movie_infos,
                 'total_movies': len(movie_infos)
             })
         return result
 
-    def get_movie_info(self, movie: Tag) -> dict:
+    def parse_movie(self, movie: Tag) -> dict:
+        # TODO: Find better handling.
+        price = movie.find('meta', itemprop='priceRange')
+        if price:
+            price = price['content']
+        else:
+            price = 'n/a'
+
         result = {
-            'name': movie.find('span', itemprop='name').text,
-            'price': movie.find('span').text,
+            'image': movie.find('meta', itemprop='image')['content'],
+            'title': movie.find('span', itemprop='name').text,
+            'price': price,
             'genre': movie.find('span', class_='genre').text,
             'running_time': movie.find('span', class_='running_time').text,
             'schedule': [
@@ -52,6 +60,6 @@ class ClickTheCitySpider:
 
 if __name__ == '__main__':
     spider = ClickTheCitySpider(
-        'https://www.clickthecity.com/movies/theaters/sm-aura-premier'
+        'https://www.clickthecity.com/movies/theaters/sm-megamall'
     )
-    pp.pprint(spider.run())
+    pp.pprint(spider.crawl())
