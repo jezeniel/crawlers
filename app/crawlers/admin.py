@@ -18,8 +18,10 @@ class CinemaAdmin(admin.ModelAdmin):
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
     list_display = (
-        'title', 'cinema', 'room', 'genre', 'price', 'view_schedule', 'created_at'
+        'title', 'cinema', 'room', 'genre', 'price',
+        'running_time', 'view_schedule', 'created_at'
     )
+    list_filter = ('cinema', 'created_at')
 
     def view_schedule(self, obj):
         if not obj.schedule:
